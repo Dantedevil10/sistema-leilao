@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from './contexts/AuthContext';
-import Login from './pages/Login';
 
+import Login from './pages/Login';
 import Vitrine from './pages/Vitrine';
+import Wallet from './pages/Wallet';
+import DashboardLeiloeiro from './pages/DashboardLeiloeiro';
 
 function App() {
   const { user, logout, isAuthenticated } = useContext(AuthContext);
@@ -42,11 +44,14 @@ function App() {
 
       <main className="container mx-auto p-4">
         <Routes>
+          {/* Rotas renderizando os componentes corretos */}
           <Route path="/" element={<Vitrine />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/leiloeiro" element={<DashboardLeiloeiro />} />
+          <Route path="/wallet" element={<Wallet />} />
+          
+          {/* Rotas a fazer */}
           <Route path="/lot/:id" element={<h1 className="text-2xl">Sala do Lote (Ao Vivo)</h1>} />
-          <Route path="/leiloeiro" element={<h1 className="text-2xl">Painel do Leiloeiro</h1>} />
-          <Route path="/wallet" element={<h1 className="text-2xl">Carteira do Licitante</h1>} />
           <Route path="/audit/:lotId" element={<h1 className="text-2xl">Auditoria do Lote</h1>} />
         </Routes>
       </main>
