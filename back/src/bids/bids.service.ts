@@ -108,25 +108,34 @@ export class BidsService {
       });
 
       const previousHash = lastBid ? lastBid.hash : 'GENESIS';
-      const bid = manager.create(Bid, {
+      
+      // 1. Geramos o ID e a Data aqui no Node
+      const newBidId = crypto.randomUUID(); 
+      const newCreatedAt = new Date();
+
+      // 2. Calculamos o hash ANTES de tocar no banco
+      const newHash = this.calculateHash(
+        newBidId,
         lotId,
         userId,
         amount,
+        newCreatedAt,
         previousHash,
-      });
-
-      // Salva temporariamente para obter o ID gerado e timestamp
-      const savedBid = await manager.save(bid);
-      savedBid.hash = this.calculateHash(
-        savedBid.id,
-        savedBid.lotId,
-        savedBid.userId,
-        Number(savedBid.amount),
-        savedBid.createdAt,
-        savedBid.previousHash,
       );
 
-      await manager.save(savedBid);
+      // 3. Criamos a entidade completa
+      const bid = manager.create(Bid, {
+        id: newBidId,
+        lotId,
+        userId,
+        amount,
+        hash: newHash,
+        previousHash,
+        createdAt: newCreatedAt,
+      });
+
+      // 4. Inserimos no banco com sucesso (apenas 1 query e sem violar o NOT NULL)
+      const savedBid = await manager.save(bid);
 
       return {
         bid: savedBid,
