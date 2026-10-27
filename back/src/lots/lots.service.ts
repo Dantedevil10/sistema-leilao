@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { Lot } from './entities/lot.entity.js';
 import { LotStatus } from './enums/lot-status.enum.js';
 import { CreateLotDto } from './dto/create-lot.dto.js';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class LotsService {
   constructor(
     @InjectRepository(Lot)
     private lotsRepository: Repository<Lot>,
+    @InjectQueue('auction-liquidation') private liquidationQueue: Queue,
   ) {}
 
   async create(createLotDto: CreateLotDto, leiloeiroId: string) {
@@ -29,7 +32,15 @@ export class LotsService {
       status: startTime <= new Date() ? LotStatus.AO_VIVO : LotStatus.AGENDADO,
     });
 
-    return this.lotsRepository.save(lot);
+    const savedLot = await this.lotsRepository.save(lot);
+
+    // AGENDAR A LIQUIDAÇÃO NO BULLMQ
+    const delay = endTime.getTime() - new Date().getTime();
+    if (delay > 0) {
+      await this.liquidationQueue.add('liquidate', { lotId: savedLot.id }, { delay });
+    }
+
+    return savedLot;
   }
 
   // Vitrine pública: traz ao vivo, agendados e encerrados. Lotes cancelados não aparecem.

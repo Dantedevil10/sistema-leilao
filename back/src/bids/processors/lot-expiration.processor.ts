@@ -1,5 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -18,6 +19,8 @@ export class LotExpirationProcessor extends WorkerHost {
     @InjectRepository(User) private usersRepository: Repository<User>,
     private dataSource: DataSource,
     private bidsGateway: BidsGateway,
+    // INJETAMOS A FILA AQUI PARA PODER REAGENDAR DE VERDADE
+    @InjectQueue('auction-liquidation') private liquidationQueue: Queue,
   ) {
     super();
   }
@@ -28,16 +31,25 @@ export class LotExpirationProcessor extends WorkerHost {
 
     await this.dataSource.transaction(async (manager) => {
       const lot = await manager.findOne(Lot, { where: { id: lotId } });
+      
       if (!lot || lot.status === LotStatus.ENCERRADO || lot.status === LotStatus.CANCELADO) {
         return;
       }
 
-      // Se houve alteração do horário por Anti-Sniping, adia a execução
-      if (new Date() < lot.endTime) {
-        this.logger.log(`Lote ${lotId} teve tempo prorrogado. Reagendando encerramento.`);
+      const now = new Date();
+      const endTime = new Date(lot.endTime);
+
+      // Se o lance estendeu o horário ou a fila disparou milissegundos antes
+      if (now < endTime) {
+        const delay = endTime.getTime() - now.getTime();
+        this.logger.log(`Lote ${lotId} não chegou no fim. Reagendando para daqui a ${delay}ms.`);
+        
+        // AGORA SIM ELE COLOCA DE VOLTA NA FILA!
+        await this.liquidationQueue.add('liquidate', { lotId }, { delay });
         return;
       }
 
+      // Se passou da hora, encerra o lote
       lot.status = LotStatus.ENCERRADO;
 
       if (lot.winnerId) {
@@ -46,7 +58,7 @@ export class LotExpirationProcessor extends WorkerHost {
 
         const finalPrice = Number(lot.currentPrice);
 
-        // Liquidação do Saldo
+        // Liquidação do Saldo do Licitante e Leiloeiro
         if (winner && leiloeiro) {
           winner.saldoTotal = Number(winner.saldoTotal) - finalPrice;
           winner.saldoComprometido = Number(winner.saldoComprometido) - finalPrice;
@@ -59,8 +71,9 @@ export class LotExpirationProcessor extends WorkerHost {
 
       await manager.save(lot);
 
-      // Notifica os clientes via WebSocket
+      // Notifica os clientes via WebSocket que o leilão acabou
       this.bidsGateway.notifyLotEnded(lot.id, lot.winnerId, Number(lot.currentPrice));
+      this.logger.log(`Lote ${lotId} encerrado com sucesso.`);
     });
   }
 }

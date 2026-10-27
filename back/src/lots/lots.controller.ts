@@ -18,6 +18,13 @@ export class LotsController {
     return this.lotsService.getVitrine();
   }
 
+  @Get('won')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.LICITANTE)
+  getWonLots(@Request() req: AuthenticatedRequest) {
+    return this.lotsService.getWonLots(req.user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.lotsService.findOne(id);
@@ -39,10 +46,5 @@ export class LotsController {
     return this.lotsService.cancelLot(id, req.user.id);
   }
 
-  @Get('won')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.LICITANTE)
-  getWonLots(@Request() req: AuthenticatedRequest) {
-    return this.lotsService.getWonLots(req.user.id);
-  }
+
 }
