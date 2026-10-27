@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import socket from '../services/socket';
 import { AuthContext } from '../contexts/AuthContext';
@@ -139,6 +139,7 @@ export default function LotRoom() {
           <div className={`absolute top-4 right-4 px-3 py-1 font-bold rounded ${lot.status === 'AO_VIVO' ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-500 text-white'}`}>
             {lot.status === 'AO_VIVO' ? timeLeft : 'Encerrado'}
           </div>
+          <Link to={`/audit/${id}`} className="mt-2 inline-block text-sm text-blue-600 hover:underline">🔍 Ver Auditoria Pública deste Lote</Link>
 
           <img src={lot.imageUrl} alt={lot.title} className="max-h-64 object-contain mb-4" />
           <h2 className="text-2xl font-bold mb-2 text-center">{lot.title}</h2>

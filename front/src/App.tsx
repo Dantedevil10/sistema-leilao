@@ -7,6 +7,8 @@ import Vitrine from './pages/Vitrine';
 import Wallet from './pages/Wallet';
 import DashboardLeiloeiro from './pages/DashboardLeiloeiro';
 import LotRoom from './pages/LotRoom';
+import Audit from './pages/Audit';
+import MyArremates from './pages/MyArremates';
 
 function App() {
   const { user, logout, isAuthenticated } = useContext(AuthContext);
@@ -17,7 +19,6 @@ function App() {
         <div className="font-bold text-xl">Casa de Leilões Verzel</div>
         <div className="space-x-4 flex items-center">
           <Link to="/" className="hover:underline">Vitrine</Link>
-          <Link to="/audit/fake-id" className="hover:underline">Auditoria</Link>
           
           {isAuthenticated ? (
             <>
@@ -25,7 +26,10 @@ function App() {
                 <Link to="/leiloeiro" className="hover:underline">Painel Leiloeiro</Link>
               )}
               {user?.role === 'LICITANTE' && (
-                <Link to="/wallet" className="hover:underline">Carteira</Link>
+                <>
+                  <Link to="/wallet" className="hover:underline">Carteira</Link>
+                  <Link to="/arremates" className="hover:underline">Meus Arremates</Link>
+                </>
               )}
               <span className="text-sm opacity-75 ml-4">Olá, {user?.name}</span>
               <button 
@@ -51,9 +55,11 @@ function App() {
           <Route path="/leiloeiro" element={<DashboardLeiloeiro />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/lot/:id" element={<LotRoom />} />
+          <Route path="/arremates" element={<MyArremates />} />
+          <Route path="/audit/:lotId" element={<Audit />} />
           
           {/* Rotas a fazer */}
-          <Route path="/audit/:lotId" element={<h1 className="text-2xl">Auditoria do Lote</h1>} />
+          
         </Routes>
       </main>
     </Router>
