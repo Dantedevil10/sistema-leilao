@@ -20,7 +20,7 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "seed": "tsx src/seed.ts"
+    "seed": "nest build && node dist/seed.js"
   },
   "dependencies": {
     "@nestjs/bullmq": "^12.0.0",
@@ -36,6 +36,7 @@
     "bullmq": "^6.5.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "ioredis": "^5.11.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.23.1",
