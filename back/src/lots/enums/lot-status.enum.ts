@@ -1,0 +1,6 @@
+export enum LotStatus {
+  AGENDADO = 'AGENDADO',
+  AO_VIVO = 'AO_VIVO',
+  ENCERRADO = 'ENCERRADO',
+  CANCELADO = 'CANCELADO',
+}
