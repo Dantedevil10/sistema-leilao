@@ -3,6 +3,8 @@ import { useContext } from 'react';
 import { AuthContext } from './contexts/AuthContext';
 import Login from './pages/Login';
 
+import Vitrine from './pages/Vitrine';
+
 function App() {
   const { user, logout, isAuthenticated } = useContext(AuthContext);
 
@@ -40,7 +42,7 @@ function App() {
 
       <main className="container mx-auto p-4">
         <Routes>
-          <Route path="/" element={<h1 className="text-2xl font-bold">Vitrine de Lotes em breve...</h1>} />
+          <Route path="/" element={<Vitrine />} />
           <Route path="/login" element={<Login />} />
           <Route path="/lot/:id" element={<h1 className="text-2xl">Sala do Lote (Ao Vivo)</h1>} />
           <Route path="/leiloeiro" element={<h1 className="text-2xl">Painel do Leiloeiro</h1>} />
