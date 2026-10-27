@@ -64,6 +64,9 @@ export class BidsService {
 
       // Validação e Ajuste de Saldo do Licitante
       const user = await manager.findOne(User, { where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado.');
+      }
       const saldoTotal = Number(user.saldoTotal);
       const saldoComprometido = Number(user.saldoComprometido);
       const saldoDisponivel = saldoTotal - saldoComprometido;
