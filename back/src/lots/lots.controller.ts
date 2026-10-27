@@ -38,4 +38,11 @@ export class LotsController {
   cancel(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.lotsService.cancelLot(id, req.user.id);
   }
+
+  @Get('won')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.LICITANTE)
+  getWonLots(@Request() req: AuthenticatedRequest) {
+    return this.lotsService.getWonLots(req.user.id);
+  }
 }

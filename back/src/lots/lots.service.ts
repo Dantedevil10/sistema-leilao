@@ -61,4 +61,11 @@ export class LotsService {
     lot.status = LotStatus.CANCELADO;
     return this.lotsRepository.save(lot);
   }
+
+  async getWonLots(userId: string) {
+    return this.lotsRepository.find({
+      where: { winnerId: userId, status: LotStatus.ENCERRADO },
+      order: { endTime: 'DESC' },
+    });
+  }
 }
