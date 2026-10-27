@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Vitrine from './pages/Vitrine';
 import Wallet from './pages/Wallet';
 import DashboardLeiloeiro from './pages/DashboardLeiloeiro';
+import LotRoom from './pages/LotRoom';
 
 function App() {
   const { user, logout, isAuthenticated } = useContext(AuthContext);
@@ -49,9 +50,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/leiloeiro" element={<DashboardLeiloeiro />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/lot/:id" element={<LotRoom />} />
           
           {/* Rotas a fazer */}
-          <Route path="/lot/:id" element={<h1 className="text-2xl">Sala do Lote (Ao Vivo)</h1>} />
           <Route path="/audit/:lotId" element={<h1 className="text-2xl">Auditoria do Lote</h1>} />
         </Routes>
       </main>
