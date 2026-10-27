@@ -6,6 +6,8 @@ import { RolesGuard } from '../auth/roles.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 import { Role } from '../users/enums/role.enum.js';
 
+import type { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface.js';
+
 @Controller('lots')
 export class LotsController {
   constructor(private readonly lotsService: LotsService) {}
@@ -25,7 +27,7 @@ export class LotsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LEILOEIRO)
-  create(@Request() req, @Body() createLotDto: CreateLotDto) {
+  create(@Request() req: AuthenticatedRequest, @Body() createLotDto: CreateLotDto) {
     return this.lotsService.create(createLotDto, req.user.id);
   }
 
@@ -33,7 +35,7 @@ export class LotsController {
   @Patch(':id/cancel')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LEILOEIRO)
-  cancel(@Request() req, @Param('id') id: string) {
+  cancel(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.lotsService.cancelLot(id, req.user.id);
   }
 }
