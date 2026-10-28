@@ -6,6 +6,8 @@ import { Lot } from '../lots/entities/lot.entity.js';
 import { User } from '../users/entities/user.entity.js';
 import { DataSource } from 'typeorm';
 
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
 describe('BidsService - Regras de Auditoria', () => {
   let service: BidsService;
 
@@ -57,5 +59,22 @@ describe('BidsService - Regras de Auditoria', () => {
     const hashAdulterado = (service as any).calculateHash('id', 'lot', 'user', 500.01, createdAt, 'GENESIS');
 
     expect(hashOriginal).not.toEqual(hashAdulterado);
+  });
+
+  it('3. Deve detectar roubo/adulteração no histórico (isChainIntact = false)', async () => {
+    const fakeBids = [
+      { id: '1', lotId: 'lot-1', userId: 'user-1', amount: 100, createdAt: new Date(), previousHash: 'GENESIS', hash: 'hash-valido-1' },
+      { id: '2', lotId: 'lot-1', userId: 'user-2', amount: 150, createdAt: new Date(), previousHash: 'hash-valido-1', hash: 'HACKED-HASH-ROUBADO' }
+    ];
+
+    // Solução para o erro 'never': retornamos a Promise diretamente dentro do jest.fn()
+    service['bidsRepository'].find = jest.fn(() => Promise.resolve(fakeBids)) as any;
+    
+    jest.spyOn(service as any, 'calculateHash').mockReturnValue('HASH-VERDADEIRO-CALCULADO' as any);
+
+    const result = await service.auditLot('lot-1');
+
+    expect(result.isChainIntact).toBe(false);
+    expect(result.history[1].isAuthentic).toBe(false);
   });
 });
