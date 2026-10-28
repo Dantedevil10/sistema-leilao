@@ -136,89 +136,139 @@ export default function LotRoom() {
   const isWinner = lot.winnerId === user?.id;
 
   return (
-    <div className="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      
-      {/* Coluna da Esquerda: Produto e Lance */}
-      <div className="md:col-span-2 space-y-6">
-        <div className="bg-white p-6 rounded shadow flex flex-col items-center relative">
-          <div className={`absolute top-4 right-4 px-3 py-1 font-bold rounded ${
-            lot.status === 'AO_VIVO' ? 'bg-red-500 text-white animate-pulse' : 
-            lot.status === 'AGENDADO' ? 'bg-blue-500 text-white' : 
-            'bg-gray-500 text-white'
-          }`}>
-            {lot.status === 'ENCERRADO' || lot.status === 'CANCELADO' ? 'Encerrado' : timeLeft}
-          </div>
-          <Link to={`/audit/${id}`} className="mt-2 inline-block text-sm text-blue-600 hover:underline">🔍 Ver Auditoria Pública deste Lote</Link>
+    <div className="max-w-7xl mx-auto mt-2">
+      <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-6 transition">
+        ← Voltar à Vitrine
+      </Link>
 
-          <img src={lot.imageUrl} alt={lot.title} className="max-h-64 object-contain mb-4" />
-          <h2 className="text-2xl font-bold mb-2 text-center">{lot.title}</h2>
-          <p className="text-gray-600 mb-6 text-center">{lot.description}</p>
-
-          <div className="w-full bg-gray-100 p-4 rounded-lg flex justify-between items-center mb-6">
-            <div>
-              <p className="text-gray-500 text-sm">Lance Atual</p>
-              <p className="text-4xl font-bold text-green-600">{formatCurrency(lot.currentPrice)}</p>
-            </div>
-            <div className="text-right text-sm text-gray-500">
-              <p>Incremento Mínimo: {formatCurrency(lot.minIncrement)}</p>
-            </div>
-          </div>
-
-          {/* Feedback Visual: Ganhando / Superado */}
-          {user?.role === 'LICITANTE' && lot.status === 'AO_VIVO' && (
-            <div className={`w-full p-3 text-center rounded font-bold mb-4 ${isWinner ? 'bg-green-100 text-green-700 border border-green-400' : 'bg-yellow-100 text-yellow-700 border border-yellow-400'}`}>
-              {isWinner ? '🏆 Você está ganhando!' : '⚠️ Você foi superado ou ainda não deu lances.'}
-            </div>
-          )}
-
-          {feedback && <div className="w-full text-center text-sm font-bold text-red-600 mb-4">{feedback}</div>}
-
-          {/* Formulário de Lance (Apenas Licitantes em Lotes Ao Vivo) */}
-          {user?.role !== 'LEILOEIRO' && lot.status === 'AO_VIVO' && (
-            <form onSubmit={handlePlaceBid} className="w-full flex gap-4">
-              <input
-                type="number"
-                step="0.01"
-                min={Number(lot.currentPrice) + (history.length > 0 ? Number(lot.minIncrement) : 0)}
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                placeholder="Valor do Lance"
-                required
-                className="flex-grow border p-3 rounded font-bold text-lg"
-              />
-              <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-3 rounded transition">
-                Dar Lance
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-
-      {/* Coluna da Direita: Histórico de Lances */}
-      <div className="bg-white p-6 rounded shadow h-[80vh] flex flex-col">
-        <h3 className="text-xl font-bold border-b pb-2 mb-4 text-gray-800">Histórico Ao Vivo</h3>
+      <Link to={`/audit/${id}`} className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-semibold">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+        Aceder à Auditoria Pública
+      </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <div className="flex-grow overflow-y-auto space-y-3">
-          {history.length === 0 ? (
-            <p className="text-gray-500 text-center mt-10">Nenhum lance dado ainda. Seja o primeiro!</p>
-          ) : (
-            history.map((bid, index) => (
-              <div key={bid.id} className={`p-3 rounded border ${index === 0 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'}`}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className={`font-bold ${index === 0 ? 'text-green-700' : 'text-gray-700'}`}>
-                    {formatCurrency(bid.amount)}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(bid.createdAt).toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {bid.bidderTag || (bid.userId === user?.id ? 'Você' : `Licitante (Final ${bid.userId?.slice(-4) || ''})`)}
-                </div>
-              </div>
-            ))
-          )}
+        {/* Coluna da Esquerda: Galeria de Produto */}
+        <div className="lg:col-span-2">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden flex flex-col items-center">
+            
+            {/* Etiqueta de Tempo (Redesenhada) */}
+            <div className={`absolute top-6 right-6 px-4 py-2 font-black rounded-full shadow-lg text-sm tracking-wider uppercase backdrop-blur-md ${
+              lot.status === 'AO_VIVO' ? 'bg-red-500/90 text-white animate-pulse border border-red-400' : 
+              lot.status === 'AGENDADO' ? 'bg-blue-500/90 text-white' : 
+              'bg-gray-800/90 dark:bg-gray-600/90 text-white'
+            }`}>
+              {lot.status === 'ENCERRADO' || lot.status === 'CANCELADO' ? 'Encerrado' : timeLeft}
+            </div>
+
+            {/* Imagem */}
+            <div className="w-full h-[400px] flex items-center justify-center p-4">
+              <img 
+                src={lot.imageUrl} 
+                alt={lot.title} 
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                className="max-h-full max-w-full object-contain drop-shadow-2xl"
+              />
+            </div>
+          </div>
+          
+          {/* Informações de Texto */}
+          <div className="mt-8 px-2">
+            <h2 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white mb-4">{lot.title}</h2>
+            <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed mb-6">{lot.description}</p>
+            
+            <Link to={`/audit/${id}`} className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-semibold">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              Aceder à Auditoria Pública
+            </Link>
+          </div>
         </div>
+        
+        {/* Coluna da Direita: Painel de Lances Ao Vivo */}
+        
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-[80vh] min-h-[600px]">
+            
+            {/* Bloco Superior: Preço em Destaque */}
+            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {lot.status === 'AGENDADO' ? 'Lance Inicial' : lot.status === 'ENCERRADO' ? 'Valor Arrematado' : 'Lance Atual'}
+              </p>
+              <p className="text-5xl font-black text-green-500 dark:text-green-400 drop-shadow-sm">
+                {formatCurrency(lot.currentPrice)}
+              </p>
+              
+              <div className="mt-3 flex justify-between items-center text-xs font-semibold text-gray-500 dark:text-gray-400">
+                <span>Lances: {history.length}</span>
+                <span>Incremento: {formatCurrency(lot.minIncrement)}</span>
+              </div>
+            </div>
+
+            {/* Avisos de Liderança */}
+            {user?.role === 'LICITANTE' && lot.status === 'AO_VIVO' && (
+              <div className={`p-4 text-center font-bold text-sm tracking-wide ${
+                isWinner ? 'bg-green-500 text-white' : 'bg-yellow-400 text-yellow-900'
+              }`}>
+                {isWinner ? '🏆 ESTÁ A LIDERAR O LEILÃO!' : '⚠️ FOI ULTRAPASSADO. DÊ UM NOVO LANCE!'}
+              </div>
+            )}
+            {feedback && <div className="p-3 text-center text-sm font-bold bg-red-500 text-white">{feedback}</div>}
+
+            {/* Ação de Dar Lance (Floating Console) */}
+            {user?.role !== 'LEILOEIRO' && lot.status === 'AO_VIVO' && (
+              <div className="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <form onSubmit={handlePlaceBid} className="flex flex-col gap-3">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={Number(lot.currentPrice) + (history.length > 0 ? Number(lot.minIncrement) : 0)}
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(e.target.value)}
+                    placeholder="Introduza o seu valor"
+                    required
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white p-4 rounded-xl font-bold text-xl text-center focus:ring-4 focus:ring-green-400/50 focus:border-green-500 transition"
+                  />
+                  <button type="submit" className="w-full bg-green-500 hover:bg-green-600 text-white font-black text-lg py-4 rounded-xl uppercase tracking-wider shadow-lg hover:shadow-green-500/30 transition transform hover:-translate-y-0.5">
+                    Submeter Lance
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Histórico Rolável */}
+            <div className="flex-grow p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/30">
+              <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Feed de Lances</h3>
+              
+              <div className="space-y-3">
+                {history.length === 0 ? (
+                  <p className="text-gray-400 text-center italic mt-10">Nenhum lance registado.</p>
+                ) : (
+                  history.map((bid, index) => (
+                    <div key={bid.id} className={`p-4 rounded-xl flex justify-between items-center transition-all ${
+                      index === 0 
+                        ? 'bg-white dark:bg-gray-700 shadow-md border-l-4 border-green-500' 
+                        : 'bg-transparent border border-gray-200 dark:border-gray-600 opacity-70'
+                    }`}>
+                      <div>
+                        <div className={`font-black text-lg ${index === 0 ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                          {formatCurrency(bid.amount)}
+                        </div>
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1">
+                          {bid.bidderTag || (bid.userId === user?.id ? 'Você' : `Participante (...${bid.userId?.slice(-4) || ''})`)}
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-500 dark:text-gray-400">
+                        {new Date(bid.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
       </div>
     </div>
   );
