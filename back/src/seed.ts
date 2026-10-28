@@ -61,20 +61,20 @@ async function bootstrap() {
 
   // 4. Criar Lote Ao Vivo
   const now = new Date();
-  const startTime = new Date(now.getTime() - 1000 * 60 * 5); // Iniciado há 5 mins
-  const endTime = new Date(now.getTime() + 1000 * 60 * 60); // Termina em 1 hora
+  const startTime = new Date(now.getTime() - 1000 * 60 * 5); // Iniciou há 5 mins
+  const endTime = new Date(now.getTime() + 1000 * 60 * 60 * 24); // Termina em 1 dia (amanhã)
 
   const lotCount = await lotRepository.count();
   if (lotCount === 0) {
     await lotRepository.save(
       lotRepository.create({
-        title: 'Mochila Tecnológica Foldsack No. 1',
-        description: 'Mochila perfeita para uso diário e notebooks de até 15 polegadas.',
-        imageUrl: 'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
-        attributes: { category: "men's clothing", rating: { rate: 3.9, count: 120 } },
-        initialPrice: 100,
-        minIncrement: 10,
-        currentPrice: 100,
+        title: 'Bracelete de Prata Dragon',
+        description: 'Elegante bracelete de prata 925 maciça, ideal para colecionadores.',
+        imageUrl: 'https://fakestoreapi.com/img/71pWzhdJNwL._AC_UL640_QL65_ML3_.jpg',
+        attributes: { category: "jewelery", originalPrice: 695 },
+        initialPrice: 200,
+        minIncrement: 50,
+        currentPrice: 200,
         status: LotStatus.AO_VIVO,
         startTime,
         endTime,
