@@ -92,7 +92,12 @@ export default function LotRoom() {
         setTimeLeft('Encerrado');
         clearInterval(timer);
       } else if (now < start) {
-        setTimeLeft('Ainda não começou');
+        const distance = start - now;
+        const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimeLeft(`Começa em: ${d > 0 ? `${d}d ` : ''}${h}h ${m}m ${s}s`);
       } else {
         const distance = end - now;
         const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -136,8 +141,12 @@ export default function LotRoom() {
       {/* Coluna da Esquerda: Produto e Lance */}
       <div className="md:col-span-2 space-y-6">
         <div className="bg-white p-6 rounded shadow flex flex-col items-center relative">
-          <div className={`absolute top-4 right-4 px-3 py-1 font-bold rounded ${lot.status === 'AO_VIVO' ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-500 text-white'}`}>
-            {lot.status === 'AO_VIVO' ? timeLeft : 'Encerrado'}
+          <div className={`absolute top-4 right-4 px-3 py-1 font-bold rounded ${
+            lot.status === 'AO_VIVO' ? 'bg-red-500 text-white animate-pulse' : 
+            lot.status === 'AGENDADO' ? 'bg-blue-500 text-white' : 
+            'bg-gray-500 text-white'
+          }`}>
+            {lot.status === 'ENCERRADO' || lot.status === 'CANCELADO' ? 'Encerrado' : timeLeft}
           </div>
           <Link to={`/audit/${id}`} className="mt-2 inline-block text-sm text-blue-600 hover:underline">🔍 Ver Auditoria Pública deste Lote</Link>
 
