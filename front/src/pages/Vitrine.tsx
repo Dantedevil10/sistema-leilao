@@ -5,14 +5,29 @@ import LotCard from '../components/LotCard';
 
 export default function Vitrine() {
   const [lots, setLots] = useState<Lot[]>([]);
+  const [carouselLots, setCarouselLots] = useState<Lot[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  
+  // Filtros de exibição
+  const [filters, setFilters] = useState({
+    AO_VIVO: true,
+    AGENDADO: true,
+    ENCERRADO: true,
+  });
 
   const fetchLots = async (query = '') => {
     setLoading(true);
     try {
       const response = await api.get(`/lots/vitrine${query ? `?search=${query}` : ''}`);
-      setLots(response.data);
+      const data = response.data;
+      setLots(data);
+      
+      // Sorteia até 5 itens para o carrossel apenas na primeira carga
+      if (!query && carouselLots.length === 0) {
+        const randomLots = [...data].sort(() => 0.5 - Math.random()).slice(0, 5);
+        setCarouselLots(randomLots);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -29,22 +44,25 @@ export default function Vitrine() {
     fetchLots(search);
   };
 
+  const toggleFilter = (key: keyof typeof filters) => {
+    setFilters(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const lotesAoVivo = lots.filter(lot => lot.status === 'AO_VIVO');
   const lotesAgendados = lots.filter(lot => lot.status === 'AGENDADO');
   const lotesEncerrados = lots.filter(lot => lot.status === 'ENCERRADO');
 
-  const Section = ({ title, icon, data }: { title: string; icon: string; data: Lot[] }) => {
-    if (data.length === 0) return null;
+  const Section = ({ title, data, isVisible }: { title: string; data: Lot[], isVisible: boolean }) => {
+    if (!isVisible || data.length === 0) return null;
     return (
-      <div className="mb-12">
-        <div className="flex items-center gap-3 border-b-2 border-gray-200 dark:border-gray-700 pb-3 mb-6">
-          <span className="text-3xl">{icon}</span>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{title}</h2>
-          <span className="ml-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm font-bold">
+      <div className="mb-10">
+        <div className="border-b-2 border-gray-300 pb-2 mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wide">{title}</h2>
+          <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded text-xs font-bold">
             {data.length}
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {data.map(lot => <LotCard key={lot.id} lot={lot} />)}
         </div>
       </div>
@@ -52,46 +70,65 @@ export default function Vitrine() {
   };
 
   return (
-    <div>
-      {/* Hero Banner Elegante */}
-      <div className="bg-gradient-to-br from-blue-700 to-indigo-900 dark:from-gray-800 dark:to-gray-900 rounded-3xl shadow-xl p-10 md:p-16 mb-12 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
-        
-        <h1 className="text-4xl md:text-5xl font-black text-white mb-4 relative z-10">
-          Descubra itens únicos em leilão.
-        </h1>
-        <p className="text-blue-100 dark:text-gray-300 text-lg md:text-xl max-w-2xl mx-auto mb-10 relative z-10 font-light">
-          Acompanhe lotes ao vivo, dispute arremates em tempo real e verifique a autenticidade através de auditoria criptográfica.
-        </p>
-        
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3 relative z-10">
+    <div className="max-w-7xl mx-auto">
+      
+      {/* 1. Busca no Topo */}
+      <div className="bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-200 dark:border-gray-700 rounded-md mb-6">
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
-            placeholder="O que está à procura hoje?"
+            placeholder="Pesquisar lotes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-grow bg-white/95 dark:bg-gray-800/95 text-gray-900 dark:text-white border-0 p-4 rounded-xl focus:ring-4 focus:ring-blue-400/50 shadow-lg text-lg"
+            className="flex-grow bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 p-3 rounded-md focus:outline-none focus:border-blue-500 text-gray-800 dark:text-gray-100"
           />
-          <button type="submit" className="bg-blue-500 hover:bg-blue-400 text-white px-8 py-4 rounded-xl font-bold text-lg transition shadow-lg">
-            Pesquisar
+          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-md font-bold transition-colors">
+            Buscar
           </button>
         </form>
       </div>
 
-      {/* Conteúdo */}
+      {/* 2. Carrossel de Destaques Aleatórios (se não estiver buscando) */}
+      {!search && carouselLots.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">Destaques</h2>
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300">
+            {carouselLots.map(lot => (
+              <div key={lot.id} className="snap-start shrink-0 w-72">
+                <LotCard lot={lot} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Marcadores/Filtros de Exibição */}
+      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700 mb-6 flex flex-wrap gap-4 items-center">
+        <span className="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase">Exibir nas listagens:</span>
+        <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-800 dark:text-gray-200">
+          <input type="checkbox" checked={filters.AO_VIVO} onChange={() => toggleFilter('AO_VIVO')} className="w-4 h-4 accent-blue-600" />
+          🔴 Ao Vivo
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-800 dark:text-gray-200">
+          <input type="checkbox" checked={filters.AGENDADO} onChange={() => toggleFilter('AGENDADO')} className="w-4 h-4 accent-blue-600" />
+          🗓️ Agendados
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-800 dark:text-gray-200">
+          <input type="checkbox" checked={filters.ENCERRADO} onChange={() => toggleFilter('ENCERRADO')} className="w-4 h-4 accent-blue-600" />
+          🔨 Encerrados
+        </label>
+      </div>
+
+      {/* 4. Listagem Filtrada */}
       {loading ? (
-        <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-        </div>
+        <div className="text-center py-10 text-gray-500 font-bold">Carregando lotes...</div>
       ) : lots.length === 0 ? (
-        <div className="text-center text-gray-500 dark:text-gray-400 py-20 text-lg">
-          Nenhum lote corresponde à sua pesquisa.
-        </div>
+        <div className="text-center py-10 text-gray-500 border-2 border-dashed border-gray-300 rounded-md">Nenhum lote corresponde à pesquisa.</div>
       ) : (
         <>
-          <Section title="A Decorrer Agora" icon="🔴" data={lotesAoVivo} />
-          <Section title="Próximos Lotes" icon="🗓️" data={lotesAgendados} />
-          <Section title="Leilões Encerrados" icon="🔨" data={lotesEncerrados} />
+          <Section title="🔴 Ao Vivo Agora" data={lotesAoVivo} isVisible={filters.AO_VIVO} />
+          <Section title="🗓️ Em Breve" data={lotesAgendados} isVisible={filters.AGENDADO} />
+          <Section title="🔨 Encerrados" data={lotesEncerrados} isVisible={filters.ENCERRADO} />
         </>
       )}
     </div>
