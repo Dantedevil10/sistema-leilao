@@ -3,7 +3,27 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 body {
-  background-color: #f3f4f6; /* Fundo padrão */
+  background-color: #f3f4f6;
   margin: 0;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+/* Força os inputs e o card de login/registro a ficarem escuros perfeitamente no Dark Mode */
+.dark body {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+.dark input, 
+.dark select {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #1f2937 inset !important;
 }

@@ -104,20 +104,58 @@ export default function Vitrine() {
 
       {/* 3. Marcadores/Filtros de Exibição */}
       <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700 mb-6 flex flex-wrap gap-4 items-center">
-        <span className="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase">Exibir nas listagens:</span>
-        <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-800 dark:text-gray-200">
-          <input type="checkbox" checked={filters.AO_VIVO} onChange={() => toggleFilter('AO_VIVO')} className="w-4 h-4 accent-blue-600" />
-          🔴 Ao Vivo
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-800 dark:text-gray-200">
-          <input type="checkbox" checked={filters.AGENDADO} onChange={() => toggleFilter('AGENDADO')} className="w-4 h-4 accent-blue-600" />
-          🗓️ Agendados
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-gray-800 dark:text-gray-200">
-          <input type="checkbox" checked={filters.ENCERRADO} onChange={() => toggleFilter('ENCERRADO')} className="w-4 h-4 accent-blue-600" />
-          🔨 Encerrados
-        </label>
-      </div>
+  <span className="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase">
+    Exibir nas listagens:
+  </span>
+
+  <label
+    className={`flex items-center gap-2 cursor-pointer select-none text-sm font-semibold px-3 py-2 rounded-md border transition-colors ${
+      filters.AO_VIVO
+        ? 'border-blue-500 text-blue-700 dark:text-blue-300'
+        : 'border-transparent text-gray-800 dark:text-gray-200'
+    }`}
+  >
+    <input
+      type="checkbox"
+      checked={filters.AO_VIVO}
+      onChange={() => toggleFilter('AO_VIVO')}
+      className="hidden"
+    />
+    🔴 Ao Vivo
+  </label>
+
+  <label
+    className={`flex items-center gap-2 cursor-pointer select-none text-sm font-semibold px-3 py-2 rounded-md border transition-colors ${
+      filters.AGENDADO
+        ? 'border-blue-500 text-blue-700 dark:text-blue-300'
+        : 'border-transparent text-gray-800 dark:text-gray-200'
+    }`}
+  >
+    <input
+      type="checkbox"
+      checked={filters.AGENDADO}
+      onChange={() => toggleFilter('AGENDADO')}
+      className="hidden"
+    />
+    🗓️ Agendados
+  </label>
+
+  <label
+    className={`flex items-center gap-2 cursor-pointer select-none text-sm font-semibold px-3 py-2 rounded-md border transition-colors ${
+      filters.ENCERRADO
+        ? 'border-blue-500 text-blue-700 dark:text-blue-300'
+        : 'border-transparent text-gray-800 dark:text-gray-200'
+    }`}
+  >
+    <input
+      type="checkbox"
+      checked={filters.ENCERRADO}
+      onChange={() => toggleFilter('ENCERRADO')}
+      className="hidden"
+    />
+    🔨 Encerrados
+  </label>
+</div>
 
       {/* 4. Listagem Filtrada */}
       {loading ? (
