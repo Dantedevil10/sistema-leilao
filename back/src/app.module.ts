@@ -12,6 +12,7 @@ import { ExternalApiModule } from './external-api/external-api.module.js';
 import { LotsModule } from './lots/lots.module.js';
 import { BullModule } from '@nestjs/bullmq';
 import { BidsModule } from './bids/bids.module.js';
+import { SeedModule } from './seed/seed.module.js';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { BidsModule } from './bids/bids.module.js';
     ExternalApiModule,
     LotsModule,
     BidsModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
