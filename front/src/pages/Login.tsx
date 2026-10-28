@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -63,6 +63,12 @@ export default function Login() {
           >
             Entrar
           </button>
+          <p className="text-sm text-center text-gray-600 mt-4">
+            Não tem uma conta?{' '}
+            <Link to="/register" className="text-blue-600 hover:underline font-semibold">
+              Cadastre-se
+            </Link>
+          </p>
         </form>
       </div>
     </div>

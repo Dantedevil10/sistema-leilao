@@ -9,6 +9,7 @@ import DashboardLeiloeiro from './pages/DashboardLeiloeiro';
 import LotRoom from './pages/LotRoom';
 import Audit from './pages/Audit';
 import MyArremates from './pages/MyArremates';
+import Register from './pages/Register';
 
 function App() {
   const { user, logout, isAuthenticated } = useContext(AuthContext);
@@ -57,7 +58,8 @@ function App() {
           <Route path="/lot/:id" element={<LotRoom />} />
           <Route path="/arremates" element={<MyArremates />} />
           <Route path="/audit/:lotId" element={<Audit />} />
-          
+          <Route path="/register" element={<Register />} />
+
           {/* Rotas a fazer */}
           
         </Routes>
