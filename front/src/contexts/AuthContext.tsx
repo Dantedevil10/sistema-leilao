@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     setUser(null);
+    window.location.href = '/';
   };
 
   return (
