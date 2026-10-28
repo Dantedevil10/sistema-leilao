@@ -65,7 +65,7 @@ export default function Audit() {
       </div>
 
       <div className="space-y-4">
-        {audit.history.map((bid, index) => (
+        {audit.history.map((bid) => (
           <div key={bid.id} className="bg-white p-4 rounded shadow text-sm border-l-4 border-gray-300">
             <div className="flex justify-between items-center mb-2">
               <span className="font-bold text-lg text-gray-800">

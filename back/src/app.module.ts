@@ -17,18 +17,18 @@ import { BidsModule } from './bids/bids.module.js';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'root',
-      password: 'rootpassword',
-      database: 'auction_db',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT ?? '5432', 10),
+      username: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || 'root',
+      database: process.env.DB_NAME || 'leilaodb',
       entities: [User, Lot, Bid],
       synchronize: true, // Use apenas em dev. Em prod, use migrations.
     }),
     BullModule.forRoot({
       connection: {
-        host: 'localhost',
-        port: 6379,
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
       },
     }),
     AuthModule,

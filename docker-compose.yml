@@ -1,19 +1,64 @@
+
 services:
+  # 1. Banco de Dados PostgreSQL
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
+    container_name: leilao-db
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
-      POSTGRES_DB: auction_db
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: leilaodb
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - elitedev_pgdata:/var/lib/postgresql/data
 
+  # 2. Redis (Para as filas BullMQ / Sockets)
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    container_name: leilao-redis
     ports:
       - "6379:6379"
+    volumes:
+      - elitedev_redisdata:/data
 
+  # Back-End NestJS
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: leilao-backend
+    ports:
+      - "3000:3000"
+    environment:
+      # O backend acessa o banco e o redis pelo nome do serviço no Docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=leilaodb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=chave_secreta_elite_dev_2026
+    depends_on:
+      - postgres
+      - redis
+
+  # Front-End React/Vite
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: leilao-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # O navegador do usuário é quem faz a requisição, então ele enxerga o localhost da máquina dele
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+
+# Define os volumes para não perder dados se o container desligar
 volumes:
-  pgdata:
+  elitedev_pgdata:
+  elitedev_redisdata:

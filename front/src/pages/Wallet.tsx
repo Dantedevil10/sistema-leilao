@@ -1,6 +1,6 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { AuthContext } from '../contexts/AuthContext';
+
 
 interface WalletData {
   saldoTotal: number;
@@ -9,7 +9,7 @@ interface WalletData {
 }
 
 export default function Wallet() {
-  const { user } = useContext(AuthContext);
+  
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [loading, setLoading] = useState(false);
