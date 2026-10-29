@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import type { Lot } from '../types';
 
@@ -43,11 +42,22 @@ export default function LotCard({ lot }: LotCardProps) {
         
         <div className="mt-auto bg-gray-50 dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 uppercase font-bold mb-1">
-            {lot.status === 'AGENDADO' ? 'Lance Inicial' : lot.status === 'ENCERRADO' ? 'Arrematado por' : 'Lance Atual'}
+            {lot.status === 'AGENDADO' 
+              ? 'Lance Inicial' 
+              : lot.status === 'ENCERRADO' 
+              ? (lot.winnerId ? 'Valor Final Arrematado' : 'Status do Lote') 
+              : 'Lance Atual'}
           </p>
-          <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
-            {formatCurrency(lot.currentPrice)}
-          </p>
+          
+          {lot.status === 'ENCERRADO' && !lot.winnerId ? (
+            <p className="text-sm font-bold text-amber-600 dark:text-amber-400 py-1">
+              Não Arrematado (Sem Lances)
+            </p>
+          ) : (
+            <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
+              {formatCurrency(lot.currentPrice)}
+            </p>
+          )}
         </div>
 
         <Link
