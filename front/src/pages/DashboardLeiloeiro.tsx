@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import type { Lot } from '../types';
@@ -28,10 +28,15 @@ export default function DashboardLeiloeiro() {
   const [myLots, setMyLots] = useState<Lot[]>([]);
   const [walletTotal, setWalletTotal] = useState(0);
 
-  // NOVO ESTADO: Filtro para o painel de lotes
   const [lotFilter, setLotFilter] = useState<string>('TODOS');
-
   const [feedback, setFeedback] = useState({ type: '', message: '' });
+
+  // Referência para o topo para controlar o scroll automático
+  const topRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -59,6 +64,7 @@ export default function DashboardLeiloeiro() {
       setItems(response.data);
     } catch (error) {
       setFeedback({ type: 'error', message: 'Erro ao buscar itens na API externa.' });
+      scrollToTop();
     } finally {
       setLoadingSearch(false);
     }
@@ -89,8 +95,10 @@ export default function DashboardLeiloeiro() {
       setStartTime('');
       setEndTime('');
       fetchDashboardData();
+      scrollToTop(); // Dá scroll para o topo para ver a mensagem de sucesso
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.response?.data?.message || 'Erro ao criar lote.' });
+      scrollToTop(); // Dá scroll para o topo para ver o erro instantaneamente
     }
   };
 
@@ -100,15 +108,16 @@ export default function DashboardLeiloeiro() {
       await api.patch(`/lots/${lotId}/cancel`);
       setFeedback({ type: 'success', message: 'Lote cancelado e estorno realizado com sucesso.' });
       fetchDashboardData();
+      scrollToTop();
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.response?.data?.message || 'Erro ao cancelar lote.' });
+      scrollToTop();
     }
   };
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  // Lógica de filtragem dos lotes com base na opção selecionada no select
   const filteredLots = myLots.filter((lot) => {
     if (lotFilter === 'TODOS') return true;
     if (lotFilter === 'CANCELADO') return lot.status === 'CANCELADO';
@@ -120,7 +129,7 @@ export default function DashboardLeiloeiro() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto mt-6">
+    <div ref={topRef} className="max-w-6xl mx-auto mt-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-6 gap-4">
         <h2 className="text-3xl font-bold text-gray-800">Painel do Leiloeiro</h2>
         <div className="bg-green-100 border border-green-300 px-6 py-3 rounded-lg text-right w-full md:w-auto shadow-sm">
@@ -290,7 +299,6 @@ export default function DashboardLeiloeiro() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h3 className="text-xl font-bold text-gray-800">Gerenciar Lotes Criados</h3>
             
-            {/* CAMPO SELECT DE FILTRO ADICIONADO */}
             <div className="w-full md:w-auto">
               <select
                 value={lotFilter}
