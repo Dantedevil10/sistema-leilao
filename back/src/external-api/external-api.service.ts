@@ -5,17 +5,27 @@ export class ExternalApiService {
   private readonly baseUrl = 'https://fakestoreapi.com/products';
   private readonly logger = new Logger(ExternalApiService.name);
 
+  // Headers para disfarçar o Node.js de navegador e passar no firewall da API externa (Evita o erro 403)
+  private readonly requestHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+  };
+
   async searchItems(query?: string) {
     try {
-      // Trava de segurança: Aborta se a FakeStoreAPI demorar mais de 8 segundos
+      // Timeout de 8 segundos para evitar que a requisição trave o servidor
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch(this.baseUrl, { signal: controller.signal });
+      const response = await fetch(this.baseUrl, { 
+        signal: controller.signal,
+        headers: this.requestHeaders 
+      });
+      
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`A API externa retornou status HTTP: ${response.status}`);
+        throw new Error(`Status HTTP retornado: ${response.status}`);
       }
       
       const items = await response.json();
@@ -27,11 +37,13 @@ export class ExternalApiService {
       }
       return items;
     } catch (error:any) {
-      // AGORA SIM O ERRO VAI APARECER NO LOG DO RENDER
+      // Registra o motivo real (timeout ou 403) no log interno do Render
       this.logger.error(`Falha ao buscar fakestoreapi: ${error.message}`);
       
-      // Retorna array vazio em vez de explodir a tela do usuário com erro 502
-      return []; 
+      // DEVOLVE A SINALIZAÇÃO PARA O FRONTEND CONFORME O SEU CÓDIGO ORIGINAL
+      throw new BadGatewayException(
+        'Falha ao buscar itens na API externa. Tente novamente.',
+      );
     }
   }
 
@@ -40,19 +52,23 @@ export class ExternalApiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch(`${this.baseUrl}/${id}`, { signal: controller.signal });
+      const response = await fetch(`${this.baseUrl}/${id}`, { 
+        signal: controller.signal,
+        headers: this.requestHeaders 
+      });
+      
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Status HTTP: ${response.status}`);
+        throw new Error(`Status HTTP retornado: ${response.status}`);
       }
       
       return await response.json();
     } catch (error:any) {
       this.logger.error(`Falha ao buscar item ${id} na fakestoreapi: ${error.message}`);
       
-      // Lança exceção controlada apenas se a busca por ID específico falhar
-      throw new BadGatewayException('Item da API externa indisponível no momento.');
+      // DEVOLVE A SINALIZAÇÃO PARA O FRONTEND
+      throw new BadGatewayException('Item da API externa não encontrado.');
     }
   }
 }
