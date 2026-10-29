@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Bid } from './entities/bid.entity.js';
@@ -62,11 +62,12 @@ export class BidsService {
         }
       }
 
-      // Validação e Ajuste de Saldo do Licitante
+      // Validação de Saldo do Licitante
       const user = await manager.findOne(User, { where: { id: userId } });
       if (!user) {
         throw new NotFoundException('Usuário não encontrado.');
       }
+
       const saldoTotal = Number(user.saldoTotal);
       const saldoComprometido = Number(user.saldoComprometido);
       const saldoDisponivel = saldoTotal - saldoComprometido;
@@ -75,18 +76,8 @@ export class BidsService {
         throw new BadRequestException('Saldo disponível insuficiente.');
       }
 
-      // Estorno do Saldo Comprometido do líder anterior
-      if (lot.winnerId) {
-        const previousWinner = await manager.findOne(User, { where: { id: lot.winnerId } });
-        if (previousWinner) {
-          previousWinner.saldoComprometido = Math.max(0, Number(previousWinner.saldoComprometido) - currentPrice);
-          await manager.save(previousWinner);
-        }
-      }
-
-      // Compromete saldo do novo líder
-      user.saldoComprometido = saldoComprometido + amount;
-      await manager.save(user);
+      // Guarda o ID do líder anterior para estorno/recálculo de saldo
+      const previousWinnerId = lot.winnerId;
 
       // Prorrogação Anti-Sniping (+2 min se o lance for feito nos últimos 2 min)
       const twoMinutesInMs = 2 * 60 * 1000;
@@ -96,10 +87,29 @@ export class BidsService {
         timeExtended = true;
       }
 
-      // Atualiza o Lote
+      // Atualiza o Lote com novo valor e líder
       lot.currentPrice = amount;
       lot.winnerId = userId;
       await manager.save(lot);
+
+      // Recalcula Saldo Comprometido do novo líder
+      const userActiveLots = await manager.find(Lot, {
+        where: { winnerId: userId, status: LotStatus.AO_VIVO },
+      });
+      user.saldoComprometido = userActiveLots.reduce((acc, l) => acc + Number(l.currentPrice), 0);
+      await manager.save(user);
+
+      // Recalcula e libera o Saldo Comprometido do líder anterior
+      if (previousWinnerId && previousWinnerId !== userId) {
+        const previousWinner = await manager.findOne(User, { where: { id: previousWinnerId } });
+        if (previousWinner) {
+          const prevActiveLots = await manager.find(Lot, {
+            where: { winnerId: previousWinnerId, status: LotStatus.AO_VIVO },
+          });
+          previousWinner.saldoComprometido = prevActiveLots.reduce((acc, l) => acc + Number(l.currentPrice), 0);
+          await manager.save(previousWinner);
+        }
+      }
 
       // Gerador da Cadeia de Hash
       const lastBid = await manager.findOne(Bid, {
@@ -109,11 +119,9 @@ export class BidsService {
 
       const previousHash = lastBid ? lastBid.hash : 'GENESIS';
       
-      // 1. Geramos o ID e a Data aqui no Node
       const newBidId = crypto.randomUUID(); 
       const newCreatedAt = new Date();
 
-      // 2. Calculamos o hash ANTES de tocar no banco
       const newHash = this.calculateHash(
         newBidId,
         lotId,
@@ -123,7 +131,6 @@ export class BidsService {
         previousHash,
       );
 
-      // 3. Criamos a entidade completa
       const bid = manager.create(Bid, {
         id: newBidId,
         lotId,
@@ -134,7 +141,6 @@ export class BidsService {
         createdAt: newCreatedAt,
       });
 
-      // 4. Inserimos no banco com sucesso (apenas 1 query e sem violar o NOT NULL)
       const savedBid = await manager.save(bid);
 
       return {
@@ -178,7 +184,6 @@ export class BidsService {
         id: bid.id,
         amount: Number(bid.amount),
         createdAt: bid.createdAt,
-        // Anonimização de privacidade para auditoria pública
         bidderTag: `Licitante-...${bid.userId.slice(-4)}`,
         hash: bid.hash,
         previousHash: bid.previousHash,

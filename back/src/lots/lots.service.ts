@@ -42,7 +42,6 @@ export class LotsService {
     return savedLot;
   }
 
-  // Vitrine com Busca e Filtro de Lotes
   async getVitrine(search?: string) {
     const qb = this.lotsRepository.createQueryBuilder('lot')
       .where('lot.status != :status', { status: LotStatus.CANCELADO });
@@ -54,7 +53,6 @@ export class LotsService {
     qb.orderBy('lot.createdAt', 'DESC');
     const lots = await qb.getMany();
 
-    // Correção Visual em Tempo Real: Força o status correto se a data expirou
     const now = new Date();
     return lots.map(lot => {
       if (lot.status === LotStatus.AO_VIVO && new Date(lot.endTime) < now) {
@@ -70,7 +68,6 @@ export class LotsService {
     return lot;
   }
 
-  // Cancelamento de Lote com Estorno Automático[cite: 6]
   async cancelLot(id: string, leiloeiroId: string) {
     return this.dataSource.transaction(async (manager) => {
       const lot = await manager.findOne(Lot, { where: { id } });
@@ -80,17 +77,22 @@ export class LotsService {
         throw new BadRequestException('Lotes encerrados ou já cancelados não podem ser alterados.');
       }
 
-      // Estorno Automático: Se houver um líder, devolvemos o saldo comprometido dele
-      if (lot.winnerId) {
-        const winner = await manager.findOne(User, { where: { id: lot.winnerId } });
+      const winnerId = lot.winnerId;
+      lot.status = LotStatus.CANCELADO;
+      await manager.save(lot);
+
+      if (winnerId) {
+        const winner = await manager.findOne(User, { where: { id: winnerId } });
         if (winner) {
-          winner.saldoComprometido = Math.max(0, Number(winner.saldoComprometido) - Number(lot.currentPrice));
+          const winnerActiveLots = await manager.find(Lot, {
+            where: { winnerId, status: LotStatus.AO_VIVO },
+          });
+          winner.saldoComprometido = winnerActiveLots.reduce((acc, l) => acc + Number(l.currentPrice), 0);
           await manager.save(winner);
         }
       }
 
-      lot.status = LotStatus.CANCELADO;
-      return manager.save(lot);
+      return lot;
     });
   }
 
@@ -101,7 +103,6 @@ export class LotsService {
     });
   }
 
-  // Painel do Leiloeiro: Todos os lotes criados
   async getLeiloeiroLots(leiloeiroId: string) {
     return this.lotsRepository.find({
       where: { leiloeiroId },
@@ -109,7 +110,6 @@ export class LotsService {
     });
   }
 
-  // Interface de Itens em que o Licitante deu lance
   async getParticipatedLots(userId: string) {
     const bids = await this.dataSource.getRepository(Bid).find({
       where: { userId },
