@@ -25,6 +25,9 @@ export default function LotRoom() {
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
+  
+  // NOVO ESTADO: Controle do botão de envio de lance
+  const [isSubmittingBid, setIsSubmittingBid] = useState(false);
 
   // Busca os dados iniciais do lote e histórico
   useEffect(() => {
@@ -118,13 +121,17 @@ export default function LotRoom() {
     }
 
     setFeedback('');
+    setIsSubmittingBid(true); // Bloqueia o botão e ativa o spinner
+
     socket.emit('sendBid', { lotId: id, amount: Number(bidAmount), userId: user?.id }, (response: any) => {
-      if (response.status === 'ERROR') {
+      setIsSubmittingBid(false); // Libera o botão assim que recebe a resposta do servidor
+      
+      if (response?.status === 'ERROR') {
         setFeedback(response.message); // Exibe recusa do lance
+      } else {
+        setBidAmount(''); // Limpa o input apenas se o lance for aceito
       }
     });
-    
-    setBidAmount('');
   };
 
   const formatCurrency = (val: number) => 
@@ -204,15 +211,17 @@ export default function LotRoom() {
               </div>
             </div>
 
-            {/* Avisos de Liderança */}
-            {user?.role === 'LICITANTE' && lot.status === 'AO_VIVO' && (
+            {/* Avisos de Liderança e Erros */}
+            {user?.role === 'LICITANTE' && lot.status === 'AO_VIVO' && !feedback.includes('erro') && !feedback.includes('recusado') && (
               <div className={`p-4 text-center font-bold text-sm tracking-wide ${
                 isWinner ? 'bg-green-500 text-white' : 'bg-yellow-400 text-yellow-900'
               }`}>
                 {isWinner ? '🏆 ESTÁ A LIDERAR O LEILÃO!' : '⚠️ FOI ULTRAPASSADO. DÊ UM NOVO LANCE!'}
               </div>
             )}
-            {feedback && <div className="p-3 text-center text-sm font-bold bg-red-500 text-white">{feedback}</div>}
+            
+            {/* Exibe o erro devolvido pela API de forma destacada */}
+            {feedback && <div className="p-3 text-center text-sm font-bold bg-red-500 text-white animate-pulse">{feedback}</div>}
 
             {/* Ação de Dar Lance (Floating Console) */}
             {user?.role !== 'LEILOEIRO' && lot.status === 'AO_VIVO' && (
@@ -226,10 +235,31 @@ export default function LotRoom() {
                     onChange={(e) => setBidAmount(e.target.value)}
                     placeholder="Introduza o seu valor"
                     required
-                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white p-4 rounded-xl font-bold text-xl text-center focus:ring-4 focus:ring-green-400/50 focus:border-green-500 transition"
+                    disabled={isSubmittingBid}
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white p-4 rounded-xl font-bold text-xl text-center focus:ring-4 focus:ring-green-400/50 focus:border-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <button type="submit" className="w-full bg-green-500 hover:bg-green-600 text-white font-black text-lg py-4 rounded-xl uppercase tracking-wider shadow-lg hover:shadow-green-500/30 transition transform hover:-translate-y-0.5">
-                    Submeter Lance
+                  
+                  {/* Botão com Loading State */}
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingBid}
+                    className={`w-full text-white font-black text-lg py-4 rounded-xl uppercase tracking-wider shadow-lg transition transform flex items-center justify-center gap-2 ${
+                      isSubmittingBid 
+                        ? 'bg-gray-400 cursor-not-allowed opacity-80' 
+                        : 'bg-green-500 hover:bg-green-600 hover:shadow-green-500/30 hover:-translate-y-0.5'
+                    }`}
+                  >
+                    {isSubmittingBid ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processando...
+                      </>
+                    ) : (
+                      'Submeter Lance'
+                    )}
                   </button>
                 </form>
               </div>
