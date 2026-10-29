@@ -28,6 +28,9 @@ export default function DashboardLeiloeiro() {
   const [myLots, setMyLots] = useState<Lot[]>([]);
   const [walletTotal, setWalletTotal] = useState(0);
 
+  // NOVO ESTADO: Filtro para o painel de lotes
+  const [lotFilter, setLotFilter] = useState<string>('TODOS');
+
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
   const fetchDashboardData = async () => {
@@ -104,6 +107,17 @@ export default function DashboardLeiloeiro() {
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  // Lógica de filtragem dos lotes com base na opção selecionada no select
+  const filteredLots = myLots.filter((lot) => {
+    if (lotFilter === 'TODOS') return true;
+    if (lotFilter === 'CANCELADO') return lot.status === 'CANCELADO';
+    if (lotFilter === 'ENCERRADO') return lot.status === 'ENCERRADO';
+    if (lotFilter === 'ARREMATADO') return lot.status === 'ENCERRADO' && lot.winnerId;
+    if (lotFilter === 'NAO_ARREMATADO') return lot.status === 'ENCERRADO' && !lot.winnerId;
+    if (lotFilter === 'AO_VIVO') return lot.status === 'AO_VIVO';
+    return true;
+  });
 
   return (
     <div className="max-w-6xl mx-auto mt-6">
@@ -273,12 +287,31 @@ export default function DashboardLeiloeiro() {
 
       {activeTab === 'MY_LOTS' && (
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Gerenciar Lotes Criados</h3>
-          {myLots.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Você ainda não criou nenhum lote.</p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h3 className="text-xl font-bold text-gray-800">Gerenciar Lotes Criados</h3>
+            
+            {/* CAMPO SELECT DE FILTRO ADICIONADO */}
+            <div className="w-full md:w-auto">
+              <select
+                value={lotFilter}
+                onChange={(e) => setLotFilter(e.target.value)}
+                className="w-full md:w-64 border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:border-indigo-500 bg-white font-medium text-gray-700"
+              >
+                <option value="TODOS">Filtrar: Todos os Lotes</option>
+                <option value="AO_VIVO">Ao Vivo</option>
+                <option value="ARREMATADO">Arrematados</option>
+                <option value="NAO_ARREMATADO">Não Arrematados</option>
+                <option value="ENCERRADO">Encerrados (Geral)</option>
+                <option value="CANCELADO">Cancelados</option>
+              </select>
+            </div>
+          </div>
+
+          {filteredLots.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Nenhum lote encontrado com este filtro.</p>
           ) : (
             <div className="space-y-4">
-              {myLots.map((lot) => (
+              {filteredLots.map((lot) => (
                 <div
                   key={lot.id}
                   className={`p-4 rounded-lg border-l-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
