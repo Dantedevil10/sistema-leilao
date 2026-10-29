@@ -23,8 +23,11 @@ import { SeedModule } from './seed/seed.module.js';
       username: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_NAME || 'leilaodb',
-      entities: [User, Lot, Bid],
+      autoLoadEntities: true,
       synchronize: true, // Use apenas em dev. Em prod, use migrations.
+
+      ssl: process.env.NODE_ENV === 'production',
+      extra: process.env.NODE_ENV === 'production' ? { ssl: { rejectUnauthorized: false } } : {},
     }),
     BullModule.forRoot({
       connection: {
