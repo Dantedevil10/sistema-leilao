@@ -15,7 +15,7 @@ export class ExternalApiService {
   async searchItems(query?: string) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       // Faz a requisição passando pelo proxy
       const finalUrl = `${this.proxyUrl}${encodeURIComponent(this.targetUrl)}`;
@@ -51,7 +51,7 @@ export class ExternalApiService {
   async getItemById(id: string | number) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       // Faz a requisição do ID específico passando pelo proxy
       const targetEndpoint = `${this.targetUrl}/${id}`;
