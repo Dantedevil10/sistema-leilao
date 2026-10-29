@@ -77,6 +77,7 @@ export default function LotRoom() {
     };
   }, [id, user?.id]);
 
+  // Cronômetro de tempo restante e Atualização Dinâmica de Status
   useEffect(() => {
     if (!lot) return;
 
@@ -89,9 +90,14 @@ export default function LotRoom() {
         setTimeLeft('Cancelado');
         clearInterval(timer);
       } else if (lot.status === 'ENCERRADO' || now > end) {
+        // Se a hora passou do limite e ainda não marcou encerrado na tela, atualiza!
+        if (lot.status !== 'ENCERRADO') {
+          setLot(prev => prev ? { ...prev, status: 'ENCERRADO' } : null);
+        }
         setTimeLeft('Encerrado');
         clearInterval(timer);
       } else if (now < start) {
+        // Ainda está agendado
         const distance = start - now;
         const d = Math.floor(distance / (1000 * 60 * 60 * 24));
         const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -99,6 +105,11 @@ export default function LotRoom() {
         const s = Math.floor((distance % (1000 * 60)) / 1000);
         setTimeLeft(`Começa em: ${d > 0 ? `${d}d ` : ''}${h}h ${m}m ${s}s`);
       } else {
+        // O RELÓGIO ZEROU! O lote começou agora.
+        if (lot.status === 'AGENDADO') {
+          setLot(prev => prev ? { ...prev, status: 'AO_VIVO' } : null); // Libera o botão de lance na tela na mesma hora
+        }
+        
         const distance = end - now;
         const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
