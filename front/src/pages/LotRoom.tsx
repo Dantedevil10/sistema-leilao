@@ -10,7 +10,7 @@ interface Bid {
   amount: number;
   createdAt: string;
   userId?: string;
-  bidderTag?: string; // Usado no histórico inicial
+  bidderTag?: string;
 }
 
 export default function LotRoom() {
@@ -25,20 +25,16 @@ export default function LotRoom() {
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
-  
-  // NOVO ESTADO: Controle do botão de envio de lance
   const [isSubmittingBid, setIsSubmittingBid] = useState(false);
 
-  // Busca os dados iniciais do lote e histórico
   useEffect(() => {
     const fetchLotData = async () => {
       try {
         const lotRes = await api.get(`/lots/${id}`);
         setLot(lotRes.data);
 
-        // Aproveita o endpoint de auditoria para carregar o histórico de lances
         const historyRes = await api.get(`/bids/audit/${id}`);
-        setHistory(historyRes.data.history.reverse()); // Recentes primeiro
+        setHistory(historyRes.data.history.reverse());
       } catch (err) {
         setError('Lote não encontrado.');
       } finally {
@@ -49,7 +45,6 @@ export default function LotRoom() {
     fetchLotData();
   }, [id]);
 
-  // Configuração do WebSocket
   useEffect(() => {
     if (!id) return;
 
@@ -82,7 +77,6 @@ export default function LotRoom() {
     };
   }, [id, user?.id]);
 
-  // Cronômetro de tempo restante
   useEffect(() => {
     if (!lot) return;
 
@@ -91,7 +85,10 @@ export default function LotRoom() {
       const end = new Date(lot.endTime).getTime();
       const start = new Date(lot.startTime).getTime();
 
-      if (lot.status === 'ENCERRADO' || now > end) {
+      if (lot.status === 'CANCELADO') {
+        setTimeLeft('Cancelado');
+        clearInterval(timer);
+      } else if (lot.status === 'ENCERRADO' || now > end) {
         setTimeLeft('Encerrado');
         clearInterval(timer);
       } else if (now < start) {
@@ -121,15 +118,15 @@ export default function LotRoom() {
     }
 
     setFeedback('');
-    setIsSubmittingBid(true); // Bloqueia o botão e ativa o spinner
+    setIsSubmittingBid(true);
 
     socket.emit('sendBid', { lotId: id, amount: Number(bidAmount), userId: user?.id }, (response: any) => {
-      setIsSubmittingBid(false); // Libera o botão assim que recebe a resposta do servidor
+      setIsSubmittingBid(false);
       
       if (response?.status === 'ERROR') {
-        setFeedback(response.message); // Exibe recusa do lance
+        setFeedback(response.message);
       } else {
-        setBidAmount(''); // Limpa o input apenas se o lance for aceito
+        setBidAmount('');
       }
     });
   };
@@ -154,20 +151,18 @@ export default function LotRoom() {
       </Link>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Coluna da Esquerda: Galeria de Produto */}
         <div className="lg:col-span-2">
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden flex flex-col items-center">
             
-            {/* Etiqueta de Tempo (Redesenhada) */}
             <div className={`absolute top-6 right-6 px-4 py-2 font-black rounded-full shadow-lg text-sm tracking-wider uppercase backdrop-blur-md ${
               lot.status === 'AO_VIVO' ? 'bg-red-500/90 text-white animate-pulse border border-red-400' : 
               lot.status === 'AGENDADO' ? 'bg-blue-500/90 text-white' : 
+              lot.status === 'CANCELADO' ? 'bg-gray-500 text-white' :
               'bg-gray-800/90 dark:bg-gray-600/90 text-white'
             }`}>
-              {lot.status === 'ENCERRADO' || lot.status === 'CANCELADO' ? 'Encerrado' : timeLeft}
+              {lot.status === 'CANCELADO' ? 'Cancelado' : lot.status === 'ENCERRADO' ? 'Encerrado' : timeLeft}
             </div>
 
-            {/* Imagem */}
             <div className="w-full h-[400px] flex items-center justify-center p-4">
               <img 
                 src={lot.imageUrl} 
@@ -179,31 +174,24 @@ export default function LotRoom() {
             </div>
           </div>
           
-          {/* Informações de Texto */}
           <div className="mt-8 px-2">
             <h2 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white mb-4">{lot.title}</h2>
             <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed mb-6">{lot.description}</p>
-            
-            <Link to={`/audit/${id}`} className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-semibold">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              Aceder à Auditoria Pública
-            </Link>
           </div>
         </div>
-        
-        {/* Coluna da Direita: Painel de Lances Ao Vivo */}
         
         <div className="lg:col-span-1">
           <div className="sticky top-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-[80vh] min-h-[600px]">
             
-            {/* Bloco Superior: Preço em Destaque */}
             <div className="bg-gray-50 dark:bg-gray-900/50 p-6 border-b border-gray-200 dark:border-gray-700">
               <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                {lot.status === 'AGENDADO' ? 'Lance Inicial' : lot.status === 'ENCERRADO' ? 'Valor Arrematado' : 'Lance Atual'}
+                {lot.status === 'AGENDADO' ? 'Lance Inicial' : lot.status === 'CANCELADO' ? 'Lote Cancelado' : lot.status === 'ENCERRADO' ? (lot.winnerId ? 'Valor Final Arrematado' : 'Não Arrematado') : 'Lance Atual'}
               </p>
-              <p className="text-5xl font-black text-green-500 dark:text-green-400 drop-shadow-sm">
-                {formatCurrency(lot.currentPrice)}
-              </p>
+              {lot.status !== 'CANCELADO' && (
+                <p className="text-5xl font-black text-green-500 dark:text-green-400 drop-shadow-sm">
+                  {formatCurrency(lot.currentPrice)}
+                </p>
+              )}
               
               <div className="mt-3 flex justify-between items-center text-xs font-semibold text-gray-500 dark:text-gray-400">
                 <span>Lances: {history.length}</span>
@@ -211,7 +199,6 @@ export default function LotRoom() {
               </div>
             </div>
 
-            {/* Avisos de Liderança e Erros */}
             {user?.role === 'LICITANTE' && lot.status === 'AO_VIVO' && !feedback.includes('erro') && !feedback.includes('recusado') && (
               <div className={`p-4 text-center font-bold text-sm tracking-wide ${
                 isWinner ? 'bg-green-500 text-white' : 'bg-yellow-400 text-yellow-900'
@@ -220,10 +207,8 @@ export default function LotRoom() {
               </div>
             )}
             
-            {/* Exibe o erro devolvido pela API de forma destacada */}
             {feedback && <div className="p-3 text-center text-sm font-bold bg-red-500 text-white animate-pulse">{feedback}</div>}
 
-            {/* Ação de Dar Lance (Floating Console) */}
             {user?.role !== 'LEILOEIRO' && lot.status === 'AO_VIVO' && (
               <div className="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <form onSubmit={handlePlaceBid} className="flex flex-col gap-3">
@@ -239,7 +224,6 @@ export default function LotRoom() {
                     className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white p-4 rounded-xl font-bold text-xl text-center focus:ring-4 focus:ring-green-400/50 focus:border-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   
-                  {/* Botão com Loading State */}
                   <button 
                     type="submit" 
                     disabled={isSubmittingBid}
@@ -265,7 +249,6 @@ export default function LotRoom() {
               </div>
             )}
 
-            {/* Histórico Rolável */}
             <div className="flex-grow p-6 overflow-y-auto bg-gray-50 dark:bg-gray-800/30">
               <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Feed de Lances</h3>
               

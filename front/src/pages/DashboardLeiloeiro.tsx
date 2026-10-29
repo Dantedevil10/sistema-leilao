@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import type { Lot } from '../types';
@@ -13,29 +13,23 @@ interface ExternalItem {
 }
 
 export default function DashboardLeiloeiro() {
-  // Estado para alternar entre as visualizações
   const [activeTab, setActiveTab] = useState<'CREATE' | 'MY_LOTS'>('CREATE');
 
-  // Estados da Busca e API Externa
   const [searchQuery, setSearchQuery] = useState('');
   const [items, setItems] = useState<ExternalItem[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
-  // Estados do Formulário de Criação de Lote
   const [selectedItem, setSelectedItem] = useState<ExternalItem | null>(null);
   const [initialPrice, setInitialPrice] = useState('');
   const [minIncrement, setMinIncrement] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
-  // Estados do Dashboard (Lotes Criados e Carteira)
   const [myLots, setMyLots] = useState<Lot[]>([]);
   const [walletTotal, setWalletTotal] = useState(0);
 
-  // Estado de Mensagens de Feedback
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-  // Busca os lotes do leiloeiro e o saldo arrecadado
   const fetchDashboardData = async () => {
     try {
       const [lotsRes, walletRes] = await Promise.all([
@@ -53,7 +47,6 @@ export default function DashboardLeiloeiro() {
     fetchDashboardData();
   }, []);
 
-  // Handler para busca de itens na API externa
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingSearch(true);
@@ -68,7 +61,6 @@ export default function DashboardLeiloeiro() {
     }
   };
 
-  // Handler para criação do lote
   const handleCreateLot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem) return;
@@ -99,7 +91,6 @@ export default function DashboardLeiloeiro() {
     }
   };
 
-  // Handler para cancelamento do lote com estorno automático
   const handleCancelLot = async (lotId: string) => {
     if (!window.confirm('Deseja realmente cancelar este lote? (Os lances ativos serão estornados automaticamente)')) return;
     try {
@@ -116,7 +107,6 @@ export default function DashboardLeiloeiro() {
 
   return (
     <div className="max-w-6xl mx-auto mt-6">
-      {/* Cabeçalho do Leiloeiro com o Total Arrecadado */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-6 gap-4">
         <h2 className="text-3xl font-bold text-gray-800">Painel do Leiloeiro</h2>
         <div className="bg-green-100 border border-green-300 px-6 py-3 rounded-lg text-right w-full md:w-auto shadow-sm">
@@ -125,14 +115,12 @@ export default function DashboardLeiloeiro() {
         </div>
       </div>
 
-      {/* Exibição de Mensagens de Erro ou Sucesso */}
       {feedback.message && (
         <div className={`p-4 mb-6 rounded ${feedback.type === 'error' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-700 border border-green-300'}`}>
           {feedback.message}
         </div>
       )}
 
-      {/* Seleção de Abas: Adicionar Produtos vs Meus Lotes */}
       <div className="flex border-b mb-6 gap-4">
         <button
           onClick={() => setActiveTab('CREATE')}
@@ -156,10 +144,8 @@ export default function DashboardLeiloeiro() {
         </button>
       </div>
 
-      {/* ABA 1: ADICIONAR NOVOS PRODUTOS */}
       {activeTab === 'CREATE' && (
         <div>
-          {/* Busca na API Externa */}
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-2">Buscar novo item para leilão</h3>
             <p className="text-sm text-gray-500 mb-4">Pesquise produtos na API externa para transformá-los em lotes.</p>
@@ -181,7 +167,6 @@ export default function DashboardLeiloeiro() {
             </form>
           </div>
 
-          {/* Grid com Resultados da Busca */}
           {items.length > 0 && !selectedItem && (
             <div className="mb-8">
               <h4 className="text-lg font-bold text-gray-700 mb-4">Itens encontrados ({items.length}):</h4>
@@ -207,7 +192,6 @@ export default function DashboardLeiloeiro() {
             </div>
           )}
 
-          {/* Formulário Completo de Configuração do Lote */}
           {selectedItem && (
             <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-indigo-600 mb-8">
               <div className="flex justify-between items-start mb-6 border-b pb-4">
@@ -287,7 +271,6 @@ export default function DashboardLeiloeiro() {
         </div>
       )}
 
-      {/* ABA 2: MEUS LOTES E RESULTADOS */}
       {activeTab === 'MY_LOTS' && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold text-gray-800 mb-4">Gerenciar Lotes Criados</h3>
@@ -312,12 +295,29 @@ export default function DashboardLeiloeiro() {
                     <img src={lot.imageUrl} alt={lot.title} className="h-16 w-16 object-contain rounded bg-white p-1 border" />
                     <div>
                       <h4 className="font-bold text-gray-800 text-lg">{lot.title}</h4>
-                      <p className="text-sm text-gray-600">
-                        Status:{' '}
-                        <span className="font-semibold uppercase">{lot.status}</span> |{' '}
-                        {lot.status === 'ENCERRADO' ? 'Valor Final Arrematado' : 'Lance Atual'}:{' '}
-                        <span className="font-bold text-green-700">{formatCurrency(lot.currentPrice)}</span>
-                      </p>
+                      <div className="text-sm text-gray-600 flex flex-wrap items-center gap-2 mt-0.5">
+                        <span>Status: <span className="font-semibold uppercase">{lot.status}</span></span>
+                        
+                        {lot.status === 'CANCELADO' ? (
+                          <span className="text-red-500 font-bold ml-1">(Lote Cancelado)</span>
+                        ) : lot.status === 'ENCERRADO' ? (
+                          lot.winnerId ? (
+                            <span>
+                              | Valor Final Arrematado:{' '}
+                              <span className="font-bold text-green-700">{formatCurrency(lot.currentPrice)}</span>
+                            </span>
+                          ) : (
+                            <span className="text-amber-600 font-bold ml-1">
+                              | Não Arrematado (Sem Lances)
+                            </span>
+                          )
+                        ) : (
+                          <span>
+                            | {lot.status === 'AGENDADO' ? 'Lance Inicial' : 'Lance Atual'}:{' '}
+                            <span className="font-bold text-green-700">{formatCurrency(lot.currentPrice)}</span>
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Início: {new Date(lot.startTime).toLocaleString()} | Fim: {new Date(lot.endTime).toLocaleString()}
                       </p>
