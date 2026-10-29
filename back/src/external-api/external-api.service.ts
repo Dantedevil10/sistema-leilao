@@ -2,77 +2,70 @@ import { Injectable, BadGatewayException, Logger } from '@nestjs/common';
 
 @Injectable()
 export class ExternalApiService {
-  // Proxy para mascarar o IP do Render e burlar o bloqueio da FakeStoreAPI
-  private readonly proxyUrl = 'https://api.allorigins.win/raw?url=';
-  private readonly targetUrl = 'https://fakestoreapi.com/products';
-  
+  // Adeus FakeStoreAPI e Proxy. Olá DummyJSON (Rápido e não bloqueia o Render)
+  private readonly baseUrl = 'https://dummyjson.com/products';
   private readonly logger = new Logger(ExternalApiService.name);
-  private readonly requestHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/json',
-  };
 
   async searchItems(query?: string) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos é mais que suficiente agora
 
-      // Faz a requisição passando pelo proxy
-      const finalUrl = `${this.proxyUrl}${encodeURIComponent(this.targetUrl)}`;
-      const response = await fetch(finalUrl, { 
-        signal: controller.signal,
-        headers: this.requestHeaders 
-      });
-      
+      // O DummyJSON tem busca nativa embutida
+      const url = query && query.trim() !== '' 
+        ? `${this.baseUrl}/search?q=${encodeURIComponent(query)}` 
+        : this.baseUrl;
+
+      const response = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Status HTTP retornado: ${response.status}`);
       }
       
-      const items = await response.json();
+      const data = await response.json();
+      const items = data.products || [];
 
-      if (query && query.trim() !== '') {
-        return items.filter((item: any) =>
-          item.title.toLowerCase().includes(query.toLowerCase()),
-        );
-      }
-      return items;
-    } catch (error:any) {
-      this.logger.error(`Falha ao buscar fakestoreapi via proxy: ${error.message}`);
+      // Mapeamos para o formato exato que o seu FrontEnd já espera do FakeStoreAPI
+      return items.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        description: item.description,
+        image: item.thumbnail || item.images[0], // Converte thumbnail para image
+        category: item.category
+      }));
       
-      // MANTÉM O SINAL DE ERRO PARA O FRONTEND
-      throw new BadGatewayException(
-        'Falha ao buscar itens na API externa. Tente novamente.',
-      );
+    } catch (error:any) {
+      this.logger.error(`Falha ao buscar dummyjson: ${error.message}`);
+      throw new BadGatewayException('Falha ao buscar itens na API externa. Tente novamente.');
     }
   }
 
   async getItemById(id: string | number) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      // Faz a requisição do ID específico passando pelo proxy
-      const targetEndpoint = `${this.targetUrl}/${id}`;
-      const finalUrl = `${this.proxyUrl}${encodeURIComponent(targetEndpoint)}`;
-      
-      const response = await fetch(finalUrl, { 
-        signal: controller.signal,
-        headers: this.requestHeaders 
-      });
-      
+      const response = await fetch(`${this.baseUrl}/${id}`, { signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Status HTTP retornado: ${response.status}`);
       }
       
-      return await response.json();
-    } catch (error:any) {
-      this.logger.error(`Falha ao buscar item ${id} na fakestoreapi via proxy: ${error.message}`);
+      const item = await response.json();
       
-      // MANTÉM O SINAL DE ERRO PARA O FRONTEND
+      return {
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        description: item.description,
+        image: item.thumbnail || item.images[0],
+        category: item.category
+      };
+    } catch (error:any) {
+      this.logger.error(`Falha ao buscar item ${id} no dummyjson: ${error.message}`);
       throw new BadGatewayException('Item da API externa não encontrado.');
     }
   }
