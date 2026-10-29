@@ -2,11 +2,10 @@ import { Injectable, BadGatewayException, Logger } from '@nestjs/common';
 
 @Injectable()
 export class ExternalApiService {
-  // Proxy para mascarar o IP do Render e burlar o bloqueio da FakeStoreAPI
-  private readonly proxyUrl = 'https://api.allorigins.win/raw?url=';
-  private readonly targetUrl = 'https://fakestoreapi.com/products';
-  
+  private readonly baseUrl = 'https://fakestoreapi.com/products';
   private readonly logger = new Logger(ExternalApiService.name);
+
+  // Headers para disfarçar o Node.js de navegador e passar no firewall da API externa (Evita o erro 403)
   private readonly requestHeaders = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'application/json',
@@ -14,12 +13,11 @@ export class ExternalApiService {
 
   async searchItems(query?: string) {
     try {
+      // Timeout de 8 segundos para evitar que a requisição trave o servidor
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      // Faz a requisição passando pelo proxy
-      const finalUrl = `${this.proxyUrl}${encodeURIComponent(this.targetUrl)}`;
-      const response = await fetch(finalUrl, { 
+      const response = await fetch(this.baseUrl, { 
         signal: controller.signal,
         headers: this.requestHeaders 
       });
@@ -39,9 +37,10 @@ export class ExternalApiService {
       }
       return items;
     } catch (error:any) {
-      this.logger.error(`Falha ao buscar fakestoreapi via proxy: ${error.message}`);
+      // Registra o motivo real (timeout ou 403) no log interno do Render
+      this.logger.error(`Falha ao buscar fakestoreapi: ${error.message}`);
       
-      // MANTÉM O SINAL DE ERRO PARA O FRONTEND
+      // DEVOLVE A SINALIZAÇÃO PARA O FRONTEND CONFORME O SEU CÓDIGO ORIGINAL
       throw new BadGatewayException(
         'Falha ao buscar itens na API externa. Tente novamente.',
       );
@@ -53,11 +52,7 @@ export class ExternalApiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      // Faz a requisição do ID específico passando pelo proxy
-      const targetEndpoint = `${this.targetUrl}/${id}`;
-      const finalUrl = `${this.proxyUrl}${encodeURIComponent(targetEndpoint)}`;
-      
-      const response = await fetch(finalUrl, { 
+      const response = await fetch(`${this.baseUrl}/${id}`, { 
         signal: controller.signal,
         headers: this.requestHeaders 
       });
@@ -70,9 +65,9 @@ export class ExternalApiService {
       
       return await response.json();
     } catch (error:any) {
-      this.logger.error(`Falha ao buscar item ${id} na fakestoreapi via proxy: ${error.message}`);
+      this.logger.error(`Falha ao buscar item ${id} na fakestoreapi: ${error.message}`);
       
-      // MANTÉM O SINAL DE ERRO PARA O FRONTEND
+      // DEVOLVE A SINALIZAÇÃO PARA O FRONTEND
       throw new BadGatewayException('Item da API externa não encontrado.');
     }
   }
