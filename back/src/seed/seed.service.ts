@@ -108,7 +108,6 @@ export class SeedService implements OnApplicationBootstrap {
       startTime: duasHorasAtras,
       endTime: agora,
       status: LotStatus.ENCERRADO,
-      winnerId: licitante2.id,
       leiloeiroId: leiloeiro.id,
     });
 
