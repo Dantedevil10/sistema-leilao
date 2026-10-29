@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, LessThanOrEqual } from 'typeorm';
 import { Lot } from './entities/lot.entity.js';
 import { LotStatus } from './enums/lot-status.enum.js';
 import { CreateLotDto } from './dto/create-lot.dto.js';
@@ -10,13 +10,27 @@ import { User } from '../users/entities/user.entity.js';
 import { Bid } from '../bids/entities/bid.entity.js';
 
 @Injectable()
-export class LotsService {
+export class LotsService implements OnModuleInit {
   constructor(
     @InjectRepository(Lot)
     private lotsRepository: Repository<Lot>,
     @InjectQueue('auction-liquidation') private liquidationQueue: Queue,
     private dataSource: DataSource,
   ) {}
+
+  // VIGIA AUTOMÁTICO: Roda a cada 5 segundos para virar lotes AGENDADOS para AO VIVO
+  onModuleInit() {
+    setInterval(async () => {
+      try {
+        await this.lotsRepository.update(
+          { status: LotStatus.AGENDADO, startTime: LessThanOrEqual(new Date()) },
+          { status: LotStatus.AO_VIVO }
+        );
+      } catch (error) {
+        console.error('Erro na varredura de lotes agendados:', error);
+      }
+    }, 5000);
+  }
 
   async create(createLotDto: CreateLotDto, leiloeiroId: string) {
     const startTime = new Date(createLotDto.startTime);
@@ -55,8 +69,12 @@ export class LotsService {
 
     const now = new Date();
     return lots.map(lot => {
+      // Correções visuais em tempo real na vitrine
       if (lot.status === LotStatus.AO_VIVO && new Date(lot.endTime) < now) {
         lot.status = LotStatus.ENCERRADO;
+      }
+      if (lot.status === LotStatus.AGENDADO && new Date(lot.startTime) <= now) {
+        lot.status = LotStatus.AO_VIVO;
       }
       return lot;
     });
