@@ -16,6 +16,9 @@ function App() {
   
   // Estado do Dark Mode
   const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Estado do Pop-up de Aviso do Servidor
+  const [showWakeupAlert, setShowWakeupAlert] = useState(true);
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -23,7 +26,48 @@ function App() {
   }, [isDarkMode]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 relative">
+      
+      {/* Pop-up de Aviso sobre Hibernação do Backend */}
+      {showWakeupAlert && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-lg w-full relative border border-blue-200 dark:border-blue-900">
+            {/* Botão de Fechar no topo */}
+            <button 
+              onClick={() => setShowWakeupAlert(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              title="Fechar"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-full text-blue-600 dark:text-blue-400">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Aviso Importante</h2>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+              Nosso sistema utiliza servidores que entram em modo de suspensão quando estão inativos.
+              <br/><br/>
+              Se o sistema estiver carregando e <strong>não apresentar nenhum erro</strong>, pedimos que aguarde em torno de <strong>50 segundos</strong>. Esse é o tempo necessário para o servidor "acordar" e tudo voltar aos conformes!
+            </p>
+            
+            <button 
+              onClick={() => setShowWakeupAlert(false)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md hover:shadow-lg"
+            >
+              Entendido, vou aguardar se precisar!
+            </button>
+          </div>
+        </div>
+      )}
+
       <Router>
         {/* Navbar Moderna e com suporte a Dark Mode */}
         <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
